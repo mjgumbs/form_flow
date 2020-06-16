@@ -3,11 +3,11 @@ defmodule FormFlow.Boundary.WizardValidator do
 
   def errors(params) when is_map(params) do
     data = %{}
-    types = %{name: :string, session_id: :string, forms: {:array, :any}}
+    types = %{name: :string, session_id: :string, forms: {:array, :any}, initial_data: :map}
 
     {data, types}
     |> Ecto.Changeset.cast(params, Map.keys(types))
-    |> Ecto.Changeset.validate_required(Map.keys(types), message: "is required")
+    |> Ecto.Changeset.validate_required([:name, :session_id, :forms], message: "is required")
     |> Ecto.Changeset.validate_length(:forms, min: 1, message: "atleast one form is required")
     |> Ecto.Changeset.apply_action(:insert)
     |> errors_response()

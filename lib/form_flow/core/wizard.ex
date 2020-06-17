@@ -95,12 +95,8 @@ defmodule FormFlow.Core.Wizard do
     |> update_step_changeset(step)
   end
 
-  defp update_step_changeset({:error, changeset}, step) do
+  defp update_step_changeset({_, changeset}, step) do
     Step.update_changeset(step, changeset)
-  end
-
-  defp update_step_changeset({:ok, data}, step) do
-    Step.update_changeset_data(step, data)
   end
 
   defp handle_process_response(%Step{} = step, wizard) do

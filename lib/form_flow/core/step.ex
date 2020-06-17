@@ -7,7 +7,7 @@ defmodule FormFlow.Core.Step do
   alias FormFlow.Core.Step
 
   def new(form, step_num, initial_state) do
-    key = determine_key(form, step_num)
+    key = determine_key(form)
     changeset = determine_changeset(form, key, initial_state)
 
     %__MODULE__{
@@ -22,17 +22,17 @@ defmodule FormFlow.Core.Step do
     struct(step.changeset.data, step.changeset.changes)
   end
 
-  def update_changeset(%Step{} = step, changeset) do
+  def update_changeset(%Step{} = step, changeset = %Ecto.Changeset{}) do
     %{step | changeset: changeset}
   end
 
-  def update_changeset_data(%Step{} = step, data) do
+  def update_changeset(%Step{} = step, data) do
     attrs = Map.from_struct(data)
     %{step | changeset: step.form.changeset(attrs)}
   end
 
-  defp determine_key(_form, step_num) do
-    "step_#{step_num}"
+  defp determine_key(form) do
+    to_string(form)
   end
 
   defp determine_changeset(form, key, initial_state) do

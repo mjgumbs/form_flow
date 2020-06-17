@@ -27,13 +27,14 @@ defmodule FormFlow.WizardTest do
     test "a succssfull last step should complete the wizard" do
       @wizard_params
       |> Wizard.new()
+      |> assert_status(:in_progress)
       |> assert_current_step(1)
       |> Wizard.next(@valid_attrs)
       |> assert_current_step(2)
-      |> refute_finished()
+      |> assert_status(:in_progress)
       |> Wizard.next(%{age: 19})
       |> assert_current_step(2)
-      |> assert_finished()
+      |> assert_status(:confirmation)
     end
 
     test "can move back and forth between the steps" do
@@ -51,13 +52,15 @@ defmodule FormFlow.WizardTest do
     end
   end
 
-  defp assert_finished(wizard) do
-    assert wizard.finished?
-    wizard
+  test "new wizard with initial state" do
+    @wizard_params
+    |> Wizard.new(%{step1: %{first_name: "Michail", last_name: "Gumbs"}, step2: %{age: 30}})
+    |> assert_current_step(2)
+    |> assert_status(:confrimation)
   end
 
-  defp refute_finished(wizard) do
-    refute wizard.finished?
+  defp assert_status(wizard, status) do
+    assert wizard.status == status
     wizard
   end
 

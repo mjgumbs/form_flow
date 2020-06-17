@@ -1,5 +1,6 @@
 defmodule FormFlow.Core.Step do
   defstruct key: nil,
+            name: nil,
             number: nil,
             changeset: nil,
             form: nil
@@ -8,10 +9,12 @@ defmodule FormFlow.Core.Step do
 
   def new(form, step_num, initial_state) do
     key = determine_key(form)
+    name = determine_name(form)
     changeset = determine_changeset(form, key, initial_state)
 
     %__MODULE__{
       key: key,
+      name: name,
       number: step_num,
       changeset: changeset,
       form: form
@@ -32,7 +35,22 @@ defmodule FormFlow.Core.Step do
   end
 
   defp determine_key(form) do
-    to_string(form)
+    form
+    |> module_name_to_string()
+    |> Macro.underscore()
+    |> String.to_atom()
+  end
+
+  defp determine_name(form) do
+    form
+    |> module_name_to_string()
+  end
+
+  defp module_name_to_string(form) do
+    form
+    |> to_string()
+    |> String.split(".")
+    |> List.last()
   end
 
   defp determine_changeset(form, key, initial_state) do

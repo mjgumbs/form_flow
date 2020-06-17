@@ -4,7 +4,7 @@ defmodule FormFlow.Core.Wizard do
             steps: [],
             number_of_steps: nil,
             current: 0,
-            finished?: false
+            status: nil
 
   alias FormFlow.Core.{Step, Wizard}
 
@@ -24,6 +24,7 @@ defmodule FormFlow.Core.Wizard do
       number_of_steps: length(steps),
       current: determine_initial_current_step(steps)
     }
+    |> maybe_finished()
   end
 
   @doc """
@@ -141,16 +142,16 @@ defmodule FormFlow.Core.Wizard do
     end
   end
 
-  defp maybe_finished(wizard) do
+  defp maybe_finished(wizard = %Wizard{status: status}) do
     steps_finished =
       wizard.steps
       |> Enum.filter(&(&1.changeset.valid? == true))
       |> length()
 
     if steps_finished == wizard.number_of_steps do
-      Map.put(wizard, :finished?, true)
+      Map.put(wizard, :status, :confirmation)
     else
-      Map.put(wizard, :finished?, false)
+      Map.put(wizard, :status, :in_progress)
     end
   end
 

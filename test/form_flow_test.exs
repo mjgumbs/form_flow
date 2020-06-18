@@ -10,6 +10,10 @@ defmodule FormFlowTest do
   test "Complete a wizard" do
     session = FormFlow.new_wizard(@wizard_params)
 
+    wizrard_state = FormFlow.wizard_state(session)
+
+    assert wizrard_state.status == :in_progress
+
     assert step_with_valid_params(session, @step_1_params) ==
              {true, %{first_name: "Michail", last_name: "Gumbs"}}
 
@@ -17,7 +21,11 @@ defmodule FormFlowTest do
 
     wizrard_state = FormFlow.wizard_state(session)
 
-    assert wizrard_state.finished? == true
+    assert wizrard_state.status == :confirmation
+
+    FormFlow.next_step(session)
+
+    wizrard_state = FormFlow.wizard_state(session)
   end
 
   defp step_with_valid_params(session, params, step_num \\ 1) do

@@ -15,7 +15,7 @@ defmodule FormFlow do
     WizardSession.get_state(name)
   end
 
-  def next_step(session, params) do
+  def next_step(session, params \\ %{}) do
     WizardSession.next_step(session, params)
   end
 end

@@ -4,7 +4,7 @@ defmodule FormFlow.Core.Wizard do
             steps: [],
             number_of_steps: nil,
             current: 0,
-            status: nil
+            status: :in_progress
 
   alias FormFlow.Core.{Step, Wizard}
 
@@ -17,14 +17,15 @@ defmodule FormFlow.Core.Wizard do
       |> List.wrap()
       |> build_steps(initial_state)
 
-    %Wizard{
+    wizard = %Wizard{
       name: params.name,
       session_id: params.session_id,
       steps: steps,
       number_of_steps: length(steps),
       current: determine_initial_current_step(steps)
     }
-    |> maybe_finished()
+
+    update_status(wizard)
   end
 
   @doc """
@@ -41,18 +42,20 @@ defmodule FormFlow.Core.Wizard do
   Goes to the previous step
   """
   def back(wizard) do
-    update_current_step(wizard, :down)
+    wizard
+    |> update_current_step(:down)
+    |> update_status()
   end
 
   @doc """
   Returns the public state of the wizard
   """
   def state(wizard) do
-    steps = Enum.map(wizard.steps, &map_wizard_state_steps/1)
+    steps = Enum.map(wizard.steps, &map_wizard_state_steps(&1, wizard.current))
 
     %{
       steps: steps,
-      finished?: wizard.finished?,
+      status: wizard.status,
       current: Enum.at(steps, wizard.current - 1),
       number_of_steps: wizard.number_of_steps
     }
@@ -106,7 +109,7 @@ defmodule FormFlow.Core.Wizard do
     wizard =
       wizard
       |> Map.update!(:steps, &replace_step_at_index(&1, current_step_index, step))
-      |> maybe_finished()
+      |> update_status()
 
     case step.changeset do
       %Ecto.Changeset{valid?: false} ->
@@ -142,25 +145,42 @@ defmodule FormFlow.Core.Wizard do
     end
   end
 
-  defp maybe_finished(wizard = %Wizard{status: status}) do
-    steps_finished =
-      wizard.steps
-      |> Enum.filter(&(&1.changeset.valid? == true))
-      |> length()
-
-    if steps_finished == wizard.number_of_steps do
-      Map.put(wizard, :status, :confirmation)
-    else
-      Map.put(wizard, :status, :in_progress)
-    end
+  defp update_status(wizard) do
+    steps_finished = calculate_number_of_finished_steps(wizard.steps)
+    match = steps_finished - wizard.number_of_steps + wizard.current == wizard.number_of_steps
+    update_status(wizard, wizard.status, match)
   end
 
-  defp map_wizard_state_steps(step) do
+  defp update_status(wizard, _, false) do
+    Map.put(wizard, :status, :in_progress)
+  end
+
+  defp update_status(wizard, :in_progress, true) do
+    Map.put(wizard, :status, :confirmation)
+  end
+
+  defp update_status(wizard, :confirmation, true) do
+    Map.put(wizard, :status, :completed)
+  end
+
+  defp update_status(wizard, _, _) do
+    wizard
+  end
+
+  defp calculate_number_of_finished_steps(steps) do
+    steps
+    |> Enum.filter(&(&1.changeset.valid? == true))
+    |> length()
+  end
+
+  defp map_wizard_state_steps(step, current_step) do
     %{
-      name: step.key,
+      key: step.key,
+      name: step.name,
       changeset: step.changeset,
       number: step.number,
-      completed?: step.changeset.valid?
+      completed?: step.changeset.valid?,
+      current?: current_step == step.number
     }
   end
 end

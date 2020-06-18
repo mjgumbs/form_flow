@@ -35,11 +35,14 @@ defmodule FormFlow.WizardTest do
       |> Wizard.next(%{age: 19})
       |> assert_current_step(2)
       |> assert_status(:confirmation)
+      |> Wizard.next()
+      |> assert_status(:completed)
     end
 
     test "can move back and forth between the steps" do
       @wizard_params
       |> Wizard.new()
+      |> assert_status(:in_progress)
       |> assert_current_step(1)
       |> Wizard.back()
       |> assert_current_step(1)
@@ -47,8 +50,16 @@ defmodule FormFlow.WizardTest do
       |> assert_current_step(2)
       |> Wizard.back()
       |> assert_current_step(1)
+      |> assert_status(:in_progress)
       |> Wizard.next()
       |> assert_current_step(2)
+      |> assert_status(:in_progress)
+      |> Wizard.next(%{age: 20})
+      |> assert_current_step(2)
+      |> assert_status(:confirmation)
+      |> Wizard.back()
+      |> assert_current_step(1)
+      |> assert_status(:in_progress)
     end
   end
 
@@ -56,7 +67,7 @@ defmodule FormFlow.WizardTest do
     @wizard_params
     |> Wizard.new(%{step1: %{first_name: "Michail", last_name: "Gumbs"}, step2: %{age: 30}})
     |> assert_current_step(2)
-    |> assert_status(:confrimation)
+    |> assert_status(:confirmation)
   end
 
   defp assert_status(wizard, status) do
